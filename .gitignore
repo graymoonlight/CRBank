@@ -1,0 +1,61 @@
+# Node modules (во всех папках с node_modules)
+**/node_modules/
+
+# Среда разработки и конфигурации
+/.idea/
+/.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Логи
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS файлы
+.DS_Store
+
+# Скомпилированные файлы и сборки
+**/dist/
+**/build/
+
+# Prisma generated files
+**/generated/prisma/
+
+# Кэш и временные файлы
+.temp/
+.tmp/
+
+# Тестовые отчеты и кэш
+coverage/
+.nyc_output/
+
+# Переменные окружения
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Диагностические отчеты Node.js
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Игнорировать package-lock.json, если используешь yarn или pnpm (по желанию)
+# package-lock.json
+
+# Если есть frontend — можно добавить отдельные папки и правила для него
+# например, если фронт в /client
+# /client/node_modules/
+# /client/dist/

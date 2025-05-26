@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  email        String      @unique
+  passwordHash String
+  phone        String?     @unique
+  firstName    String?
+  lastName     String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  isVerified   Boolean     @default(false)
+  isBlocked    Boolean     @default(false)
+  passwordResetToken  String?   @unique
+  passwordResetExpires DateTime?
+
+  // Связи
+  accounts      Account[]
+  kyc           Kyc?
+}
+
+model Account {
+  id          String       @id @default(uuid())
+  userId      String
+  type        AccountType  @default(CRYPTO)
+  currency    String       // USD, EUR, TON, BTC и т.д.
+  balance     Float        @default(0.0)
+  createdAt   DateTime     @default(now())
+
+  // Связи
+  user          User          @relation(fields: [userId], references: [id])
+  cryptoWallet  CryptoWallet? // Для type=CRYPTO
+  fiatDetails   FiatDetails?  // Для type=FIAT
+  fromTransactions Transaction[] @relation("FromTransactions")
+  toTransactions   Transaction[] @relation("ToTransactions")
+
+  @@index([userId, type])
+}
+
+model CryptoWallet {
+  id          String   @id @default(uuid())
+  accountId   String   @unique
+  address     String   @unique
+  network     String
+  encryptedKey String
+  isActive    Boolean  @default(true)
+  // Связь
+  account     Account  @relation(fields: [accountId], references: [id])
+}
+
+model FiatDetails {
+  id          String   @id @default(uuid())
+  accountId   String   @unique
+  iban        String?  // Номер счета (например, для EUR/USD)
+  bankName    String?
+  
+  // Связь
+  account     Account  @relation(fields: [accountId], references: [id])
+}
+
+model Transaction {
+  id              String      @id @default(uuid())
+  fromAccountId   String?     // null для пополнений
+  toAccountId     String?     // null для выводов
+  amount          Float
+  currency        String      // Валюта транзакции (исходная)
+  type            TransactionType  // TRANSFER, DEPOSIT, WITHDRAWAL, CONVERSION
+  status          TransactionStatus @default(PENDING)
+  blockchainTxHash String?    // Хэш в блокчейне (для крипто)
+  bankReference    String?    // ID банковской операции (для фиата)
+  exchangeRate    Float?      // Курс конвертации (если type=CONVERSION)
+  convertedAmount Float?      // Результат конвертации (amount * rate)
+  createdAt       DateTime    @default(now())
+
+  // Связи
+  fromAccount   Account?    @relation("FromTransactions", fields: [fromAccountId], references: [id])
+  toAccount     Account?    @relation("ToTransactions", fields: [toAccountId], references: [id])
+}
+
+model Kyc {
+  id            String      @id @default(uuid())
+  userId        String      @unique
+  documentType  String      // PASSPORT, DRIVER_LICENSE
+  documentFront String      // Путь к файлу (S3)
+  documentBack  String?
+  status        KycStatus   @default(PENDING)
+  reviewedBy    String?     // ID администратора
+  reviewedAt    DateTime?
+  createdAt     DateTime    @default(now())
+
+  // Связь
+  user          User        @relation(fields: [userId], references: [id])
+}
+
+// --- Enums ---
+
+enum AccountType {
+  FIAT
+  CRYPTO
+}
+
+enum TransactionType {
+  TRANSFER     // Перевод между счетами
+  DEPOSIT      // Пополнение
+  WITHDRAWAL   // Вывод
+  CONVERSION   // Конвертация крипто ↔ фиат
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
